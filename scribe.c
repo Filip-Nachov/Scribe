@@ -19,8 +19,10 @@ void EnableRawMode() {
     atexit(DisableRawMode); // disable raw mode at end
 
     struct termios raw = origin;
-    
-    raw.c_lflag &= ~(ECHO | ICANON | ISIG); // disable echo 
+   
+    // disableing stuff
+    raw.c_iflag &= ~(IXON);
+    raw.c_lflag &= ~(ECHO | ICANON | ISIG); 
 
     tcsetattr(STDIN_FILENO, TCSAFLUSH,&raw);
 }
