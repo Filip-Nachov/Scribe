@@ -21,7 +21,7 @@ void EnableRawMode() {
     struct termios raw = origin;
    
     // disableing stuff
-    raw.c_iflag &= ~(IXON);
+    raw.c_iflag &= ~(ICRNL | IXON);
     raw.c_lflag &= ~(ECHO | ICANON | ISIG); 
 
     tcsetattr(STDIN_FILENO, TCSAFLUSH,&raw);
