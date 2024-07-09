@@ -19,7 +19,7 @@ void EnableRawMode() {
 
     struct termios raw = origin;
     
-    raw.c_lflag &= ~(ECHO); // disable echo 
+    raw.c_lflag &= ~(ECHO | ICANON); // disable echo 
 
     tcsetattr(STDIN_FILENO, TCSAFLUSH,&raw);
 }
