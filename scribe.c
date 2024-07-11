@@ -18,7 +18,9 @@ void errors(const char *s) {
 
 // disable raw mode at end
 void DisableRawMode() {
-    tcsetattr(STDIN_FILENO, TCSAFLUSH, &origin);
+    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &origin) == -1) {
+        errors("tcsetattr");
+    }
 }
 
 // enable raw mode (disabling echo)
