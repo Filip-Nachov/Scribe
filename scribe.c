@@ -25,7 +25,7 @@ void DisableRawMode() {
 
 // enable raw mode (disabling echo)
 void EnableRawMode() {
-    tcgetattr(STDIN_FILENO, &origin);
+    if (tcgetattr(STDIN_FILENO, &origin) == -1) errors("tcgetattr");
     atexit(DisableRawMode); // disable raw mode at end
 
     struct termios raw = origin;
