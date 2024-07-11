@@ -3,10 +3,18 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <termios.h>
+#include <errno.h>
 #include <ctype.h>
 
 // making a structure
 struct termios origin;
+
+
+// void for error handaling (I think)
+void errors(const char *s) {
+    perror(s);
+    exit(1);
+}
 
 // disable raw mode at end
 void DisableRawMode() {
@@ -37,7 +45,7 @@ int main() {
 
       while (1){
         char c = '\0';
-        read(STDIN_FILENO, &c, 1)
+        read(STDIN_FILENO, &c, 1);
 
         if (iscntrl(c)) {
             printf("%d\n", c);
