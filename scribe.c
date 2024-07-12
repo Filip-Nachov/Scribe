@@ -73,16 +73,36 @@ char EditorReadKey() {
     return c;
 }
 
+int GetCP(int *rows, int *cols) {
+    // decleration
+    char buff[32];
+    unsigned int i = 0;
+
+    if (write(STDOUT_FILENO, "\x1b[6n", 4) != 4) return -1;
+    
+    while (i == sizeof(buff) -1) {
+        if (read(STDIN_FILENO, &buff[i], 1) != 1) break;
+        if (buff[i] == 'R') break;
+        i++;
+    }
+    buff[i] = '\0';
+
+    if (buff[0] != '\x1b' || buff[1] != '[') return -1;
+    if (sscanf(&buff[2], "%d;%d", rows, cols) != 2) return -1;
+    return 0;
+}
+
 int GetWS(int *rows, int *cols) {
     struct winsize ws;
 
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {
-        return -1;
-    }else {
+        if (write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12) != 12) return -1;
+        return GetCP(rows, cols);
+    } else {
         *cols = ws.ws_col;
         *rows = ws.ws_row;
-        return 0;
     }
+    return 0;
 }
 
 
@@ -90,7 +110,10 @@ int GetWS(int *rows, int *cols) {
 void EditorDrawRows() {
     int y;
     for (y = 0; y < E.S_rows; y++) {
-        write(STDOUT_FILENO, "~\r\n", 3);
+        write(STDOUT_FILENO, "~", 1);
+        if (y < E.S_rows -1 ) {
+            write(STDOUT_FILENO, "\r\n", 2);
+        }
     }
 }
 
