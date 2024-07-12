@@ -12,8 +12,12 @@
 
 /*** data ***/
 
-// making a structure
-struct termios origin;
+struct EditorConfig {
+    struct termios origin;
+};
+
+// using the editorconfig
+struct EditorConfig E;
 
 /*** funcs ***/
 
@@ -31,17 +35,17 @@ void errors(const char *s) {
 
 // disable raw mode at end
 void DisableRawMode() {
-    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &origin) == -1) {
+    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.origin) == -1) {
         errors("tcsetattr");
     }
 }
 
 // enable raw mode (disabling echo)
 void EnableRawMode() {
-    if (tcgetattr(STDIN_FILENO, &origin) == -1) errors("tcgetattr");
+    if (tcgetattr(STDIN_FILENO, &E.origin) == -1) errors("tcgetattr");
     atexit(DisableRawMode); // disable raw mode at end
 
-    struct termios raw = origin;
+    struct termios raw = E.origin;
    
     // disableing stuff
     raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
