@@ -5,6 +5,7 @@
 #include <termios.h>
 #include <errno.h>
 #include <ctype.h>
+#include <sys/ioctl.h>
 
 
 /*** defines ***/
@@ -12,8 +13,14 @@
 
 /*** data ***/
 
-// making a structure
-struct termios origin;
+struct EditorConfig {
+    int S_rows;
+    int S_cols;
+    struct termios origin;
+};
+
+// using the editorconfig
+struct EditorConfig E;
 
 /*** funcs ***/
 
@@ -31,17 +38,17 @@ void errors(const char *s) {
 
 // disable raw mode at end
 void DisableRawMode() {
-    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &origin) == -1) {
+    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.origin) == -1) {
         errors("tcsetattr");
     }
 }
 
 // enable raw mode (disabling echo)
 void EnableRawMode() {
-    if (tcgetattr(STDIN_FILENO, &origin) == -1) errors("tcgetattr");
+    if (tcgetattr(STDIN_FILENO, &E.origin) == -1) errors("tcgetattr");
     atexit(DisableRawMode); // disable raw mode at end
 
-    struct termios raw = origin;
+    struct termios raw = E.origin;
    
     // disableing stuff
     raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
@@ -66,10 +73,23 @@ char EditorReadKey() {
     return c;
 }
 
+int GetWS(int *rows, int *cols) {
+    struct winsize ws;
+
+    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {
+        return -1;
+    }else {
+        *cols = ws.ws_col;
+        *rows = ws.ws_row;
+        return 0;
+    }
+}
+
+
 /*** output ***/
 void EditorDrawRows() {
     int y;
-    for (y = 0; y < 24; y++) {
+    for (y = 0; y < E.S_rows; y++) {
         write(STDOUT_FILENO, "~\r\n", 3);
     }
 }
@@ -98,8 +118,14 @@ void EditorProcessKeypress() {
 }
 
 /*** init ***/
+
+void InitEditor() {
+    if (GetWS(&E.S_rows , &E.S_cols) == -1) errors("GetWS");
+}
+
 int main() {
       EnableRawMode();
+      InitEditor();
 
       while (1) {
           EditorRefreshScreen();
