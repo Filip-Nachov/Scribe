@@ -1,4 +1,4 @@
-// Includes
+/*** includes ***/
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -6,9 +6,15 @@
 #include <errno.h>
 #include <ctype.h>
 
+/*** data ***/
+
 // making a structure
 struct termios origin;
 
+/*** funcs ***/
+
+
+     /*** termios ***/
 
 // void for error handaling (I think)
 void errors(const char *s) {
@@ -37,11 +43,15 @@ void EnableRawMode() {
     raw.c_lflag &= ~(ECHO | ICANON | IEXTEN| ISIG); 
 
     raw.c_cc[VMIN] = 0;
+    
+
     raw.c_cc[VTIME] = 1;
 
      if (tcsetattr(STDIN_FILENO, TCSAFLUSH,&raw) == -1) errors("tcsetattr");
 }
 
+
+/*** init ***/
 int main() {
       EnableRawMode();
 
