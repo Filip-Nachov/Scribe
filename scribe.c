@@ -5,6 +5,7 @@
 #include <termios.h>
 #include <errno.h>
 #include <ctype.h>
+#include <sys/ioctl.h>
 
 
 /*** defines ***/
@@ -13,6 +14,8 @@
 /*** data ***/
 
 struct EditorConfig {
+    int S_rows;
+    int S_cols;
     struct termios origin;
 };
 
@@ -69,6 +72,19 @@ char EditorReadKey() {
     }
     return c;
 }
+
+int GetWS(int *rows, int *cols) {
+    struct winsize ws;
+
+    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {
+        return -1;
+    }else {
+        *cols = ws.ws_col;
+        *rows = ws.ws_row;
+        return 0;
+    }
+}
+
 
 /*** output ***/
 void EditorDrawRows() {
