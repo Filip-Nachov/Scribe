@@ -89,7 +89,7 @@ int GetWS(int *rows, int *cols) {
 /*** output ***/
 void EditorDrawRows() {
     int y;
-    for (y = 0; y < 24; y++) {
+    for (y = 0; y < E.S_rows; y++) {
         write(STDOUT_FILENO, "~\r\n", 3);
     }
 }
