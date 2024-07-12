@@ -118,8 +118,14 @@ void EditorProcessKeypress() {
 }
 
 /*** init ***/
+
+void InitEditor() {
+    if (GetWS(&E.S_rows , &E.S_cols) == -1) errors("GetWS");
+}
+
 int main() {
       EnableRawMode();
+      InitEditor();
 
       while (1) {
           EditorRefreshScreen();
