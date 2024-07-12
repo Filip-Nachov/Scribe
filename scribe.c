@@ -6,6 +6,10 @@
 #include <errno.h>
 #include <ctype.h>
 
+
+/*** defines ***/
+#define CTRL_KEY(k) ((k) & 0x1f)
+
 /*** data ***/
 
 // making a structure
@@ -65,7 +69,7 @@ int main() {
             printf("%d (%c)\n", c, c);
         }
 
-        if (c == 'q') break;
+        if (c == CTRL_KEY('q')) break;
       };
       return 0;
 }
