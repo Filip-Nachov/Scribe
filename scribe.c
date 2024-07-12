@@ -18,7 +18,7 @@ struct termios origin;
 /*** funcs ***/
 
 
-     /*** termios ***/
+     /*** terminal ***/
 
 // void for error handaling (I think)
 void errors(const char *s) {
