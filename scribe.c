@@ -22,6 +22,9 @@ struct termios origin;
 
 // void for error handaling (I think)
 void errors(const char *s) {
+    write(STDOUT_FILENO, "\x1b[2J", 4);
+    write(STDOUT_FILENO, "\x1b[H", 3);
+
     perror(s);
     exit(1);
 }
@@ -64,8 +67,20 @@ char EditorReadKey() {
 }
 
 /*** output ***/
+void EditorDrawRows() {
+    int y;
+    for (y = 0; y < 24; y++) {
+        write(STDOUT_FILENO, "~\r\n", 3);
+    }
+}
+
 void EditorRefreshScreen() {
     write(STDOUT_FILENO, "\x1b[2J", 4);
+    write(STDOUT_FILENO,  "\x1b[H", 3);
+
+    EditorDrawRows();
+
+    write(STDOUT_FILENO, "\x1b[H", 3);
 }
 
 /*** input ***/
@@ -74,6 +89,9 @@ void EditorProcessKeypress() {
 
     switch (c) {
         case CTRL_KEY('q'):
+            write(STDOUT_FILENO, "\x1b[2J", 4);
+            write(STDOUT_FILENO, "\x1b[H", 3);
+
             exit(0);
             break;
     }
