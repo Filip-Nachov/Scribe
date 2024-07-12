@@ -84,6 +84,7 @@ int main() {
       EnableRawMode();
 
       while (1) {
+          EditorRefreshScreen();
           EditorProcessKeypress();
       }
 
