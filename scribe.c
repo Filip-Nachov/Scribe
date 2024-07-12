@@ -64,22 +64,23 @@ char EditorReadKey() {
 }
 
 /*** input ***/
+void EditorProcessKeypress() {
+    char c = EditorReadKey();
+
+    switch (c) {
+        case CTRL_KEY('q'):
+            exit(0);
+            break;
+    }
+}
 
 /*** init ***/
 int main() {
       EnableRawMode();
 
-      while (1){
-        char c = '\0';
-        if (read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN) errors("read");
+      while (1) {
+          EditorProcessKeypress();
+      }
 
-        if (iscntrl(c)) {
-            printf("%d\n", c);
-        }else {
-            printf("%d (%c)\n", c, c);
-        }
-
-        if (c == CTRL_KEY('q')) break;
-      };
       return 0;
 }
