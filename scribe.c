@@ -64,6 +64,9 @@ char EditorReadKey() {
 }
 
 /*** output ***/
+void EditorRefreshScreen() {
+    write(STDOUT_FILENO, "\x1b[wJ", 4);
+}
 
 /*** input ***/
 void EditorProcessKeypress() {
