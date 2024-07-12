@@ -18,7 +18,7 @@ struct termios origin;
 /*** funcs ***/
 
 
-     /*** termios ***/
+     /*** terminal ***/
 
 // void for error handaling (I think)
 void errors(const char *s) {
@@ -54,22 +54,33 @@ void EnableRawMode() {
      if (tcsetattr(STDIN_FILENO, TCSAFLUSH,&raw) == -1) errors("tcsetattr");
 }
 
+char EditorReadKey() {
+    int nread;
+    char c;
+    while ((nread = read(STDIN_FILENO, &c, 1)) != 1) {
+        if (nread == -1 && errno != EAGAIN) errors("read");
+    }
+    return c;
+}
+
+/*** input ***/
+void EditorProcessKeypress() {
+    char c = EditorReadKey();
+
+    switch (c) {
+        case CTRL_KEY('q'):
+            exit(0);
+            break;
+    }
+}
 
 /*** init ***/
 int main() {
       EnableRawMode();
 
-      while (1){
-        char c = '\0';
-        if (read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN) errors("read");
+      while (1) {
+          EditorProcessKeypress();
+      }
 
-        if (iscntrl(c)) {
-            printf("%d\n", c);
-        }else {
-            printf("%d (%c)\n", c, c);
-        }
-
-        if (c == CTRL_KEY('q')) break;
-      };
       return 0;
 }
