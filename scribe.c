@@ -63,6 +63,8 @@ char EditorReadKey() {
     return c;
 }
 
+/*** output ***/
+
 /*** input ***/
 void EditorProcessKeypress() {
     char c = EditorReadKey();
