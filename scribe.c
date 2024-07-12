@@ -65,7 +65,7 @@ char EditorReadKey() {
 
 /*** output ***/
 void EditorRefreshScreen() {
-    write(STDOUT_FILENO, "\x1b[wJ", 4);
+    write(STDOUT_FILENO, "\x1b[2J", 4);
 }
 
 /*** input ***/
