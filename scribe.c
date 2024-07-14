@@ -6,10 +6,12 @@
 #include <errno.h>
 #include <ctype.h>
 #include <sys/ioctl.h>
+#include <string.h>
 
 
 /*** defines ***/
 #define CTRL_KEY(k) ((k) & 0x1f)
+#define ABUF_INIT {NULL, 0}
 
 /*** data ***/
 
@@ -105,6 +107,15 @@ int GetWS(int *rows, int *cols) {
     return 0;
 }
 
+
+// append buffer
+struct abuf {
+    char *b;
+    int len;
+};
+
+void abAppend(struct abuf *ab, const char *s, int len) {
+}
 
 /*** output ***/
 void EditorDrawRows() {
