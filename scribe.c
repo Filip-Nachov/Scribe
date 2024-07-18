@@ -10,6 +10,7 @@
 
 
 /*** defines ***/
+#define VERSION "0.0.1"
 #define CTRL_KEY(k) ((k) & 0x1f)
 #define ABUF_INIT {NULL, 0}
 
@@ -133,8 +134,34 @@ void abFree(struct abuf *ab) {
 void EditorDrawRows(struct abuf *ab) {
     int y;
     for (y = 0; y < E.S_rows; y++) {
-        abAppend(ab, "~", 1);
+        if (y == E.S_rows / 3) {
+            char welcome[80];
+            char quitin[50];
+            char slogan[100];
+            int welcomelen = snprintf(welcome, sizeof(welcome),
+                    "Scribe - Version %s\n", VERSION);
+            int quitlen = snprintf(quitin, sizeof(quitin),
+                    "To Quit: Ctrl + q\n");
+            int sloganlen = snprintf(slogan, sizeof(slogan),
+                    "Debugging is like being the detective in a crime movie where you're also the murderer");
+           
+            // writing down the welcome message
+            if (welcomelen > E.S_cols) welcomelen = E.S_cols && (welcomelen);
+            int padding = (E.S_cols - welcomelen) / 2;
+            if (padding) {
+                abAppend(ab, "~", 1);
+                padding--;
+            }
+            while (padding--) abAppend(ab, " ", 1);
+            abAppend(ab, welcome, welcomelen);
+            abAppend(ab, quitin, quitlen);
+            abAppend(ab, slogan, sloganlen); 
 
+        } else {
+        abAppend(ab, "~", 1);
+        }
+
+        abAppend(ab, "\x1b[K", 3);
         if (y < E.S_rows -1 ) {
             abAppend(ab, "\r\n", 2);
         }
@@ -145,7 +172,6 @@ void EditorRefreshScreen() {
     struct abuf ab = ABUF_INIT;
 
     abAppend(&ab, "\x1b[?25l", 6);
-    abAppend(&ab, "\x1b[2J", 4);
     abAppend(&ab,  "\x1b[H", 3);
 
     EditorDrawRows(&ab);
