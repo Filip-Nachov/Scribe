@@ -1,5 +1,5 @@
 # Scribe
-A vim inspired text editor written completely in C (based/forked from the kilo project)
+A code editor 
 
 
 Todo:
