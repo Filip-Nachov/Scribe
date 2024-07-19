@@ -17,6 +17,7 @@
 /*** data ***/
 
 struct EditorConfig {
+    int Cx, Cy; // cursor position Cx: Cursos horizontal position Cy: Cursor vertical position
     int S_rows;
     int S_cols;
     struct termios origin;
@@ -176,7 +177,10 @@ void EditorRefreshScreen() {
 
     EditorDrawRows(&ab);
 
-    abAppend(&ab, "\x1b[H", 3);
+    char buf[32];
+    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.Cy + 1, E.Cx + 1);
+    abAppend(&ab, buf, strlen(buf));
+
     abAppend(&ab, "\x1b[?25h", 6);
 
     write(STDOUT_FILENO, ab.b, ab.len);
@@ -184,6 +188,24 @@ void EditorRefreshScreen() {
 }
 
 /*** input ***/
+void EditorMoveCursor(char key) {
+    switch (key) {
+        case 'h':
+            E.Cx--;
+            break;
+        case 'l':
+            E.Cx++;
+            break;
+        case 'k':
+            E.Cy++;
+            break;
+        case 'j':
+            E.Cy--;
+            break;
+
+    }
+}
+
 void EditorProcessKeypress() {
     char c = EditorReadKey();
 
@@ -194,12 +216,22 @@ void EditorProcessKeypress() {
 
             exit(0);
             break;
+
+        case 'k':
+        case 'j':
+        case 'h':
+        case 'l':
+          EditorMoveCursor(c);
+          break;
     }
 }
 
 /*** init ***/
 
 void InitEditor() {
+    E.Cx = 0;
+    E.Cy = 0;
+
     if (GetWS(&E.S_rows , &E.S_cols) == -1) errors("GetWS");
 }
 
