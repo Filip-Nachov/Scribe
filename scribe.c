@@ -144,7 +144,7 @@ void EditorDrawRows(struct abuf *ab) {
             int quitlen = snprintf(quitin, sizeof(quitin),
                     "To Quit: Ctrl + q\n");
             int sloganlen = snprintf(slogan, sizeof(slogan),
-                    "Debugging is like being the detective in a crime movie where you're also the murderer");
+                    "Start coding today in the Scribe code editor");
            
             // writing down the welcome message
             if (welcomelen > E.S_cols) welcomelen = E.S_cols && (welcomelen);
