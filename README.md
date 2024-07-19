@@ -4,6 +4,8 @@ A vim inspired text editor written completely in C (based/forked from the kilo p
 
 Todo:
 
+ 
+- [ ] add movement with the h, j, k, l keys
 - [ ] fix the layout of the messages in the middle 
 - [ ] Modal Editing: Ensure robust modal editing with modes like normal, insert, and visual, focusing on efficiency in navigation and editing.
 - [ ] Keybindings: Implement efficient keybindings for common tasks like navigation, text manipulation, and searching, following Vim's mnemonic principles.
