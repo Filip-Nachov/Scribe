@@ -9,6 +9,8 @@ all: $(TARGET)
 
 $(TARGET): $(SRC)
 	$(CC) $(CFLAGS) $(SRC) -o $(TARGET)
+	
+install:
 	install -m 755 $(TARGET) $(BINDIR)
 
 clean:
