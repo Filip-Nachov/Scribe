@@ -138,13 +138,13 @@ void EditorDrawRows(struct abuf *ab) {
         if (y == E.S_rows / 3) {
             char welcome[80];
             char quitin[50];
-            char slogan[100];
+            char move[100];
             int welcomelen = snprintf(welcome, sizeof(welcome),
                     "Scribe - Version %s\n", VERSION);
             int quitlen = snprintf(quitin, sizeof(quitin),
                     "To Quit: Ctrl + q\n");
-            int sloganlen = snprintf(slogan, sizeof(slogan),
-                    "Debugging is like being the detective in a crime movie where you're also the murderer");
+            int movelen = snprintf(move, sizeof(move),
+                    "Move around with h, j, k, l");
            
             // writing down the welcome message
             if (welcomelen > E.S_cols) welcomelen = E.S_cols && (welcomelen);
@@ -156,7 +156,7 @@ void EditorDrawRows(struct abuf *ab) {
             while (padding--) abAppend(ab, " ", 1);
             abAppend(ab, welcome, welcomelen);
             abAppend(ab, quitin, quitlen);
-            abAppend(ab, slogan, sloganlen); 
+            abAppend(ab, move, movelen); 
 
         } else {
         abAppend(ab, "~", 1);
