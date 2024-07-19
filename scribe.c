@@ -216,6 +216,13 @@ void EditorProcessKeypress() {
 
             exit(0);
             break;
+
+        case 'k':
+        case 'j':
+        case 'h':
+        case 'l':
+          EditorMoveCursor(c);
+          break;
     }
 }
 
