@@ -191,16 +191,24 @@ void EditorRefreshScreen() {
 void EditorMoveCursor(char key) {
     switch (key) {
         case 'h':
-            E.Cx--;
+            if (E.Cx != 0) {
+                E.Cx--;
+            }
             break;
         case 'l':
-            E.Cx++;
+            if (E.Cx != E.S_cols - 1) {
+                E.Cx++;
+            }
             break;
         case 'k':
-            E.Cy++;
+            if (E.Cy != 0) { 
+                E.Cy++;
+            }
             break;
         case 'j':
-            E.Cy--;
+            if (E.Cy != E.S_rows -1) {
+                E.Cy--;
+            }
             break;
 
     }
