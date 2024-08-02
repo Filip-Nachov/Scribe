@@ -8,7 +8,6 @@
 #include <sys/ioctl.h>
 #include <string.h>
 
-
 /*** defines ***/
 #define VERSION "0.0.1"
 #define CTRL_KEY(k) ((k) & 0x1f)
@@ -135,37 +134,32 @@ void abFree(struct abuf *ab) {
 void EditorDrawRows(struct abuf *ab) {
     int y;
     for (y = 0; y < E.S_rows; y++) {
+
         if (y == E.S_rows / 3) {
-            char welcome[80];
-            char quitin[50];
-            char move[100];
+            char welcome[100];
             int welcomelen = snprintf(welcome, sizeof(welcome),
-                    "Scribe - Version %s\n", VERSION);
-            int quitlen = snprintf(quitin, sizeof(quitin),
-                    "To Quit: Ctrl + q\n");
-            int movelen = snprintf(move, sizeof(move),
-                    "Move around with h, j, k, l");
-           
-            // writing down the welcome message
-            if (welcomelen > E.S_cols) welcomelen = E.S_cols && (welcomelen);
+                    "Scribe -- version %s", VERSION);
+            if (welcomelen > E.S_cols) welcomelen = E.S_cols;
             int padding = (E.S_cols - welcomelen) / 2;
             if (padding) {
-                abAppend(ab, "~", 1);
-                padding--;
+            abAppend(ab, "~", 1);
+            padding--;
             }
-            while (padding--) abAppend(ab, " ", 1);
-            abAppend(ab, welcome, welcomelen);
-            abAppend(ab, quitin, quitlen);
-            abAppend(ab, move, movelen); 
+           while (padding--) abAppend(ab, " ", 1);
+           
+           // print out the messages
+           abAppend(ab, welcome, welcomelen);
 
         } else {
-        abAppend(ab, "~", 1);
+            abAppend(ab, "~", 1);
         }
+        
+    // drawing rows
+    abAppend(ab, "\x1b[K", 3);
+    if (y < E.S_rows - 1) {
+      abAppend(ab, "\r\n", 2);
+    }
 
-        abAppend(ab, "\x1b[K", 3);
-        if (y < E.S_rows -1 ) {
-            abAppend(ab, "\r\n", 2);
-        }
     }
 }
 
