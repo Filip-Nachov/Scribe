@@ -19,8 +19,13 @@ enum EditorKeys {
     UP = 'k', 
     DOWN = 'j',
     LEFT = 'l',
-    RIGHT = 'h'
+    RIGHT = 'h',
+    H_KEY = 'a',
+    E_KEY = 'd',
+    P_UP = 'n',
+    P_DOWN = 'm'
 };
+
 
 struct EditorConfig {
     int Cx, Cy; // cursor position Cx: Cursos horizontal position Cy: Cursor vertical position
@@ -88,14 +93,36 @@ int EditorReadKey() {
         if (read(STDIN_FILENO, &seq[1], 1) != 1) return '\x1b';
 
         if (seq[0] == '[') {
-            switch (seq[1]) {
-                case 'A': return UP;
-                case 'B': return DOWN;
-                case 'C': return LEFT;
-                case 'D': return RIGHT;
+            if (seq[1] >= '0' && seq[1] <= '9') {
+                if (read(STDIN_FILENO, &seq[2], 1) != 1) return '\x1b';
+                if (seq[2] == '~') {
+                    switch (seq[1]) {
+                        case '1': return H_KEY;
+                        case '4': return E_KEY;
+                        case '5': return P_UP;
+                        case '6': return P_DOWN;
+                        case '7': return H_KEY;
+                        case '8': return E_KEY;
+                    }
+                }
+
+            } else {
+                switch (seq[1]) {
+                    case 'A': return UP;
+                    case 'B': return DOWN;
+                    case 'C': return LEFT;
+                    case 'D': return RIGHT;
+                    case 'H': return H_KEY;
+                    case 'F': return E_KEY;
             }
 
         }
+       } else if (seq[0] == 'O') {
+           switch (seq[1]) {
+                case 'H': return H_KEY;
+                case 'F': return E_KEY;
+           }
+       }
 
         return '\x1b';
 
@@ -247,6 +274,28 @@ void EditorProcessKeypress() {
             exit(0);
             break;
 
+        // Page keys 
+        case P_UP:
+        case P_DOWN:
+            {
+                int times = E.S_rows;
+                while (times--) {
+                    EditorMoveCursor(c == P_UP ? UP : DOWN);
+                }
+            break;
+            }
+
+
+        // Home and End Keys
+        case H_KEY:
+            E.Cx = 0;
+            break;
+
+        case E_KEY:
+            E.Cx = E.S_cols - 1;
+            break;
+
+        //  basic movement 
         case UP:
         case DOWN:
         case RIGHT:
