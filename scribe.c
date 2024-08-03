@@ -15,6 +15,13 @@
 
 /*** data ***/
 
+enum EditorKeys {
+    UP = 'k', 
+    DOWN = 'j',
+    LEFT = 'l',
+    RIGHT = 'h'
+};
+
 struct EditorConfig {
     int Cx, Cy; // cursor position Cx: Cursos horizontal position Cy: Cursor vertical position
     int S_rows;
@@ -67,7 +74,7 @@ void EnableRawMode() {
      if (tcsetattr(STDIN_FILENO, TCSAFLUSH,&raw) == -1) errors("tcsetattr");
 }
 
-char EditorReadKey() {
+int EditorReadKey() {
     int nread;
     char c;
     while ((nread = read(STDIN_FILENO, &c, 1)) != 1) {
@@ -82,10 +89,10 @@ char EditorReadKey() {
 
         if (seq[0] == '[') {
             switch (seq[1]) {
-                case 'A': return 'k';
-                case 'B': return 'j';
-                case 'C': return 'l';
-                case 'D': return 'h';
+                case 'A': return UP;
+                case 'B': return DOWN;
+                case 'C': return LEFT;
+                case 'D': return RIGHT;
             }
 
         }
@@ -205,24 +212,24 @@ void EditorRefreshScreen() {
 /*** input ***/
 void EditorMoveCursor(char key) {
     switch (key) {
-        case 'h':
+        case RIGHT:
             if (E.Cx != 0) {
                 E.Cx--;
             }
             break;
-        case 'l':
+        case LEFT:
             if (E.Cx != E.S_cols - 1) {
                 E.Cx++;
             }
             break;
-        case 'k':
-            if (E.Cy != 0) { 
-                E.Cy++;
+        case UP:
+            if (E.Cy != 0) {
+                E.Cy--;
             }
             break;
-        case 'j':
+        case DOWN:
             if (E.Cy != E.S_rows -1) {
-                E.Cy--;
+                E.Cy++;
             }
             break;
 
@@ -240,10 +247,10 @@ void EditorProcessKeypress() {
             exit(0);
             break;
 
-        case 'k':
-        case 'j':
-        case 'h':
-        case 'l':
+        case UP:
+        case DOWN:
+        case RIGHT:
+        case LEFT:
           EditorMoveCursor(c);
           break;
     }
