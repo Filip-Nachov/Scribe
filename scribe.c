@@ -1,11 +1,18 @@
 /*** includes ***/
+
+#define _DEFAULT_SOURCE
+#define _BSD_SOURCE
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <unistd.h>
 #include <termios.h>
 #include <errno.h>
 #include <ctype.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
 #include <string.h>
 
 /*** defines ***/
@@ -26,11 +33,19 @@ enum EditorKeys {
     P_DOWN = 'm'
 };
 
+typedef struct {
+    int size;
+    char *chars;
+} erow;
 
 struct EditorConfig {
     int Cx, Cy; // cursor position Cx: Cursos horizontal position Cy: Cursor vertical position
+    int rowoff;
+    int coloff;
     int S_rows;
     int S_cols;
+    int numrows;
+    erow *row;
     struct termios origin;
 };
 
@@ -183,31 +198,86 @@ void abFree(struct abuf *ab) {
   free(ab->b);
 }
 
+/*** row operations ***/
+
+void EditorAppendRows(char *s, size_t len) {
+    E.row = realloc(E.row, sizeof(erow) * (E.numrows + 1));
+    int at = E.numrows;
+    E.row[at].size = len;
+    E.row[at].chars = malloc(len + 1);
+    memcpy(E.row[at].chars, s, len);
+    E.row[at].chars[len] = '\0';
+    E.numrows++; 
+}
+
+/*** file i/o ***/
+
+void EditorOpen(char* filename) {
+    FILE *fp = fopen(filename, "r");
+    if (!fp) errors("fopen");
+
+    char* line = NULL;
+    size_t linecap = 0;
+    ssize_t linelen;
+    while ((linelen = getline(&line, &linecap, fp)) != -1) {
+            while (linelen > 0 && (line[linelen - 1] == '\n' ||
+                        line[linelen - 1] == '\r')) {
+                linelen--;
+            }
+            EditorAppendRows(line, linelen);
+    }
+    free(line);
+    fclose(fp);
+} 
+
 /*** output ***/
+
+void EditorScroll() {
+    if (E.Cy < E.rowoff) {
+        E.rowoff = E.Cy;
+    }
+    if (E.Cy >= E.rowoff + E.S_rows) {
+        E.rowoff = E.Cy - E.S_rows + 1;
+    }
+    if (E.Cx < E.coloff) {
+        E.coloff = E.Cx;
+    }
+    if (E.Cx >= E.coloff + E.S_cols) {
+        E.coloff = E.Cx - E.S_cols + 1;
+    }
+}
 
 // Tildes
 void EditorDrawRows(struct abuf *ab) {
     int y;
     for (y = 0; y < E.S_rows; y++) {
+        int filerow = y + E.rowoff;
 
-        if (y == E.S_rows / 3) {
-            char welcome[100];
-            int welcomelen = snprintf(welcome, sizeof(welcome),
-                    "Scribe -- version %s", VERSION);
-            if (welcomelen > E.S_cols) welcomelen = E.S_cols;
-            int padding = (E.S_cols - welcomelen) / 2;
+    if (filerow >= E.numrows) {
+            if (E.numrows == 0 && y == E.S_rows / 3) {
+                char welcome[100];
+                int welcomelen = snprintf(welcome, sizeof(welcome),
+                        "Scribe -- version %s", VERSION);
+                if (welcomelen > E.S_cols) welcomelen = E.S_cols;
+                int padding = (E.S_cols - welcomelen) / 2;
             if (padding) {
-            abAppend(ab, "~", 1);
-            padding--;
+                abAppend(ab, "~", 1);
+                padding--;
             }
-           while (padding--) abAppend(ab, " ", 1);
+            while (padding--) abAppend(ab, " ", 1);
            
-           // print out the messages
-           abAppend(ab, welcome, welcomelen);
+            // print out the messages
+            abAppend(ab, welcome, welcomelen);
 
         } else {
             abAppend(ab, "~", 1);
         }
+    } else {
+        int len = E.row[filerow].size - E.coloff;
+        if (len < 0) len = 0;
+        if (len > E.S_cols) len = E.S_cols;
+        abAppend(ab, &E.row[filerow].chars[E.coloff] , len);
+    }
         
     // drawing rows
     abAppend(ab, "\x1b[K", 3);
@@ -219,6 +289,8 @@ void EditorDrawRows(struct abuf *ab) {
 }
 
 void EditorRefreshScreen() {
+    EditorScroll();
+
     struct abuf ab = ABUF_INIT;
 
     abAppend(&ab, "\x1b[?25l", 6);
@@ -227,7 +299,8 @@ void EditorRefreshScreen() {
     EditorDrawRows(&ab);
 
     char buf[32];
-    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.Cy + 1, E.Cx + 1);
+    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.Cy - E.rowoff) + 1,
+                                              (E.Cx - E.coloff) + 1);
     abAppend(&ab, buf, strlen(buf));
 
     abAppend(&ab, "\x1b[?25h", 6);
@@ -245,9 +318,7 @@ void EditorMoveCursor(char key) {
             }
             break;
         case LEFT:
-            if (E.Cx != E.S_cols - 1) {
-                E.Cx++;
-            }
+            E.Cx++;
             break;
         case UP:
             if (E.Cy != 0) {
@@ -255,7 +326,7 @@ void EditorMoveCursor(char key) {
             }
             break;
         case DOWN:
-            if (E.Cy != E.S_rows -1) {
+            if (E.Cy < E.numrows) {
                 E.Cy++;
             }
             break;
@@ -310,13 +381,20 @@ void EditorProcessKeypress() {
 void InitEditor() {
     E.Cx = 0;
     E.Cy = 0;
+    E.rowoff = 0;
+    E.coloff = 0;
+    E.numrows = 0;
+    E.row =  NULL;
 
     if (GetWS(&E.S_rows , &E.S_cols) == -1) errors("GetWS");
 }
 
-int main() {
+int main(int argc, char* argv[]) {
       EnableRawMode();
       InitEditor();
+      if (argc >= 2) {
+          EditorOpen(argv[1]);
+      }
 
       while (1) {
           EditorRefreshScreen();
