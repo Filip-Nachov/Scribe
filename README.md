@@ -14,8 +14,8 @@ Todo:
 - [ ] Customization: Offer limited customization for keybindings, colorschemes, and basic settings to cater to user preferences.
 - [ ] Syntax Highlighting: Implement basic syntax highlighting for a few popular programming languages.
 - [ ] Visual Mode: Include a simple visual mode for selecting blocks of text and performing operations on them.
-- [ ] Status Bar: Display a minimal status bar showing essential information like file name, cursor position, and mode.
-- [ ] Basic File Operations: Support essential file operations such as opening, saving, and closing files.
+- [x] Status Bar: Display a minimal status bar showing essential information like file name, cursor position, and mode.
+- [x] Basic File Operations: Support essential file operations such as opening, saving, and closing files.
 - [ ] Indentation and Formatting: Include basic auto-indentation and line wrapping features.
 - [ ] Help Documentation: Provide built-in help documentation for commands, keybindings, and basic editor usage.
 - [ ] Clipboard Integration: Implement basic clipboard integration for copying and pasting text.
