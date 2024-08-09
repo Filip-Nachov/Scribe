@@ -25,6 +25,7 @@
 /*** data ***/
 
 enum EditorKeys {
+    INSERT = 'i',
     UP = 'k', 
     DOWN = 'j',
     LEFT = 'l',
@@ -32,7 +33,8 @@ enum EditorKeys {
     H_KEY = 'a',
     E_KEY = 'd',
     P_UP = 'n',
-    P_DOWN = 'm'
+    P_DOWN = 'm',
+    ESC = 27
 };
 
 typedef struct {
@@ -257,6 +259,27 @@ void EditorAppendRows(char *s, size_t len) {
     E.numrows++;
 }
 
+void EditorRowInsert(erow *row, int at, int c) {
+    if (at < 0 || at > row->size) at = row->size;
+    row->chars = realloc(row->chars, row->size + 2);
+    memmove(&row->chars[at + 1], &row->chars[at], row->size - at + 1);
+    row->size++;
+    row->chars[at] = c;
+    EditorUpdateRows(row);
+}
+
+
+/*** editor operations ***/
+
+void EditorInsertChar(int c) {
+    if (E.Cy == E.numrows) {
+        EditorAppendRows(" ", 0);
+    }
+    EditorRowInsert(&E.row[E.Cy], E.Cx, c);
+    E.Cx++; 
+}
+
+
 /*** file i/o ***/
 
 void EditorOpen(char* filename) {
@@ -447,7 +470,8 @@ void EditorMoveCursor(char key) {
 
 void EditorProcessKeypress() {
     char c = EditorReadKey();
-
+    char i = c;
+    
     switch (c) {
         case CTRL_KEY('q'):
             write(STDOUT_FILENO, "\x1b[2J", 4);
@@ -493,6 +517,13 @@ void EditorProcessKeypress() {
         case LEFT:
           EditorMoveCursor(c);
           break;
+
+        case INSERT:
+            while (i != ESC) {  
+                i = EditorReadKey();
+                EditorInsertChar(i);
+                EditorRefreshScreen();
+            }
     }
 }
 
