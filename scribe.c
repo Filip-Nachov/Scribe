@@ -20,13 +20,14 @@
 /*** defines ***/
 #define VERSION "0.0.1"
 #define TAB_S 8
+#define QUIT_UNSAVED 1
 #define CTRL_KEY(k) ((k) & 0x1f)
 #define ABUF_INIT {NULL, 0}
 
 /*** data ***/
 
 enum EditorKeys {
-    BACKSPACE = '\x08',
+    BACKSPACE = 8,
     DEL = 127,
     INSERT = 'i',
     UP = 'k', 
@@ -248,9 +249,12 @@ void EditorUpdateRows(erow *row) {
   row->rsize = idx;
 }
 
-void EditorAppendRows(char *s, size_t len) {
+void EditorAppendRows(int at, char *s, size_t len) {
+    if (at < 0 || at > E.numrows) return;
+    
     E.row = realloc(E.row, sizeof(erow) * (E.numrows + 1));
-    int at = E.numrows;
+    memmove(&E.row[at + 1], &E.row[at], sizeof(erow) * (E.numrows - at));
+    
     E.row[at].size = len;
     E.row[at].chars = malloc(len + 1);
     memcpy(E.row[at].chars, s, len);
@@ -274,15 +278,76 @@ void EditorRowInsert(erow *row, int at, int c) {
     E.dirty++;
 }
 
+void EditorRowAppendString(erow *row, char *s, size_t len) {
+    row->chars = realloc(row->chars, row->size + len + 1); 
+    memcpy(&row->chars[row->size], s, len);
+    row->size += len;
+    row->chars[row->size += len] = '\0';
+    EditorUpdateRows(row);
+    E.dirty++;
+}
+
+void EditorFreeRow(erow *row) {
+    free(row->render);
+    free(row->chars);
+}
+
+void EditorDelRow(int at) {
+    if (at < 0 || at >= E.numrows) return;
+    EditorFreeRow(&E.row[at]);
+    memmove(&E.row[at], &E.row[at + 1], sizeof(erow) * (E.numrows - at - 1));
+    E.numrows--;
+    E.dirty++;
+}
+
+    
+void EditorRowDelChar(erow *row, int at) {  
+    if (at < 0 || at >= row->size) return;
+    memmove(&row->chars[at], &row->chars[at + 1], row->size - at);
+    row->size--;
+    EditorUpdateRows(row);
+    E.dirty++;
+}
 
 /*** editor operations ***/
 
 void EditorInsertChar(int c) {
     if (E.Cy == E.numrows) {
-        EditorAppendRows(" ", 0);
+        EditorAppendRows(E.numrows, " ", 0);
     }
     EditorRowInsert(&E.row[E.Cy], E.Cx, c);
     E.Cx++; 
+}
+
+void EditorInsertNewLine() {
+    if (E.Cx == 0) {
+        EditorAppendRows(E.Cy, "", 0);
+    } else {
+        erow *row = &E.row[E.Cy];
+        EditorAppendRows(E.Cy + 1, &row->chars[E.Cx], row->size - E.Cx);
+        row = &E.row[E.Cy];
+        row->size = E.Cx;
+        row->chars[row->size] = '\0';
+        EditorUpdateRows(row);
+    }
+    E.Cy++;
+    E.Cx = 0;
+}
+
+void EditorDelChar() {
+    if (E.Cy == E.numrows) return;
+    if (E.Cx == 0 && E.Cy == 0) return;
+
+    erow *row = &E.row[E.Cy];
+    if (E.Cx > 0) {
+        EditorRowDelChar(row, E.Cx);
+        E.Cx--;
+    } else {
+        E.Cx = E.row[E.Cy - 1].size;
+        EditorRowAppendString(&E.row[E.Cy - 1], row->chars, row->size);
+        EditorDelRow(E.Cy);
+        E.Cy--;
+    }
 }
 
 
@@ -337,7 +402,7 @@ void EditorOpen(char* filename) {
                         line[linelen - 1] == '\r')) {
                 linelen--;
             }
-            EditorAppendRows(line, linelen);
+            EditorAppendRows(E.numrows, line, linelen);
     }
     free(line);
     fclose(fp);
@@ -540,35 +605,43 @@ void InsertMode(int c) {
     switch (c) {
         default:
             EditorInsertChar(c);
+            break;
 
 
         case '\r':
-            // TODO
+            EditorInsertNewLine();
             break;
             
         case BACKSPACE:
-            // TODO
+            EditorDelChar();
             break;
 
         case DEL:
-            // TODO
+            EditorMoveCursor(RIGHT);
+            EditorDelChar();
             break;
     
     }
-    EditorRefreshScreen();
+    
 }
 
 
 void EditorProcessKeypress() {
+    static int quit_times = QUIT_UNSAVED;
+
     char c = EditorReadKey();
     char i = c;
     
     switch (c) {
-        case '\r':
-            // TODO
-            break;
 
         case CTRL_KEY('q'):
+            if (E.dirty && quit_times > 0) {
+                EditorSetStatusMessage("WARNING!!! File has unsaved changes. "
+                    "Press Ctrl-Q %d more time to quit.", quit_times);
+                quit_times--;
+                return;
+            }
+
             write(STDOUT_FILENO, "\x1b[2J", 4);
             write(STDOUT_FILENO, "\x1b[H", 3);
 
@@ -611,12 +684,7 @@ void EditorProcessKeypress() {
             break;
 
 
-        case BACKSPACE:
-            break;
 
-        case DEL:
-            // TODO
-            break;
 
         //  basic movement 
         case UP:
@@ -634,6 +702,7 @@ void EditorProcessKeypress() {
             while (i != ESC) {  
                 i = EditorReadKey();
                 InsertMode(i);
+                EditorRefreshScreen();
             }
             EditorSetStatusMessage("-- Normal Mode --");
     }
