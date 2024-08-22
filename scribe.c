@@ -299,7 +299,7 @@ void EditorUpdateSyntax(erow *row) {
 int EditorSyntaxToColor(int hl) {
     switch (hl) {
         case HL_NUMBER: return 32;
-        case HL_MATCH: return 34;
+        case HL_MATCH: return 36;
         default: return 37;
     }
 }
@@ -567,6 +567,14 @@ void EditorFindCallback(char *query, int key) {
     static int direction = 1;
 
 
+    static int saved_hl_line;
+    static char *saved_hl = NULL;
+    if (saved_hl) {
+        memcpy(E.row[saved_hl_line].hl, saved_hl, E.row[saved_hl_line].rsize);
+        free(saved_hl);
+        saved_hl = NULL;
+    }
+
     if (key == '\r' || key == '\x1b') {
         last_match = -1;
         direction = 1;
@@ -595,6 +603,11 @@ void EditorFindCallback(char *query, int key) {
            E.Cy = current;
            E.Cx = EditorRowRxToCx(row, match - row->render);
            E.rowoff = E.numrows;
+
+           saved_hl_line = current;
+           saved_hl = malloc(row->rsize);
+           memcpy(saved_hl, row->hl, row->rsize);
+           memset(&row->hl[match - row->render], HL_MATCH, strlen(query));
            break;
         }
     }
