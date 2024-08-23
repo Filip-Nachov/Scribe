@@ -684,59 +684,59 @@ void EditorDrawRows(struct abuf *ab) {
     for (y = 0; y < E.S_rows; y++) {
         int filerow = y + E.rowoff;
 
-    if (filerow >= E.numrows) {
+        if (filerow >= E.numrows) {
             if (E.numrows == 0 && y == E.S_rows / 3) {
                 char welcome[100];
                 int welcomelen = snprintf(welcome, sizeof(welcome),
                         "Scribe -- version %s", VERSION);
                 if (welcomelen > E.S_cols) welcomelen = E.S_cols;
                 int padding = (E.S_cols - welcomelen) / 2;
-            if (padding) {
-                abAppend(ab, "~", 1);
-                padding--;
-            }
-            while (padding--) abAppend(ab, " ", 1);
-           
-            // print out the messages
-            abAppend(ab, welcome, welcomelen);
-
-        } else {
-            abAppend(ab, "~", 1);
-        }
-    } else {
-        int len = E.row[filerow].rsize - E.coloff;
-        if (len < 0) len = 0;
-        if (len > E.S_cols) len = E.S_cols;
-        char *pC = &E.row[filerow].render[E.coloff];
-        unsigned char *hl = &E.row[filerow].hl[E.coloff];
-        int current_color = -1;
-        int j;
-        for (j = 0; j < len; j++) {
-            if (hl[j] == HL_NORMAL) {
-                if (current_color != -1) {
-                    abAppend(ab, "\x1b[39m", 5);
-                    current_color = -1;
+                if (padding) {
+                    abAppend(ab, "~", 1);
+                    padding--;
                 }
-                abAppend(ab, &pC[j], 1);
+                while (padding--) abAppend(ab, " ", 1);
+                abAppend(ab, welcome, welcomelen);
             } else {
-                int color = EditorSyntaxToColor(hl[j]);
-                if (current_color == -1) {
-                    current_color = color;
-                    char buff[16];
-                    int clen = snprintf(buff, sizeof(buff),  "\x1b[%dm", color);
-                    abAppend(ab, buff, clen);
+                abAppend(ab, "~", 1);
+            }
+        } else {
+            int len = E.row[filerow].rsize - E.coloff;
+            if (len < 0) len = 0;
+            if (len > E.S_cols) len = E.S_cols;
+            char *pC = &E.row[filerow].render[E.coloff];
+            unsigned char *hl = &E.row[filerow].hl[E.coloff];
+            int current_color = -1;
+            int j;
+            for (j = 0; j < len; j++) {
+                if (hl[j] == HL_NORMAL) {
+                    if (current_color != -1) {
+                        abAppend(ab, "\x1b[39m", 5);
+                        current_color = -1;
+                    }
+                    abAppend(ab, &pC[j], 1);
+                } else {
+                    int color = EditorSyntaxToColor(hl[j]);
+                    if (current_color == -1) {
+                        current_color = color;
+                        char buff[16];
+                        int clen = snprintf(buff, sizeof(buff),  "\x1b[%dm", color);
+                        abAppend(ab, buff, clen);
+                    }
+                    abAppend(ab, &pC[j], 1);
                 }
-                abAppend(ab, &pC[j], 1);
+            }
+            if (current_color != -1) {
+                abAppend(ab, "\x1b[39m", 5);
             }
         }
-    }
         
-    // drawing rows
-    abAppend(ab, "\x1b[K", 3);
-    abAppend(ab, "\r\n", 2);
-
+        // End the line
+        abAppend(ab, "\x1b[K", 3);
+        abAppend(ab, "\r\n", 2);
     }
 }
+
 
 void EditorDrawStatusLine(struct abuf *ab) {
     abAppend(ab, "\x1b[7m", 4);
