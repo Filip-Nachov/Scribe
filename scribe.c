@@ -23,6 +23,8 @@
 #define QUIT_UNSAVED 1
 #define CTRL_KEY(k) ((k) & 0x1f)
 #define ABUF_INIT {NULL, 0}
+#define HL_HIGHLIGHT_NUMBERS (1<<0)
+#define HL_HIGHLIGHT_STRING (1<<1)
 //arrow keys
 // A stands for Arrow
 #define A_UP 1000
@@ -31,6 +33,12 @@
 #define A_RIGHT 1003
 
 /*** data ***/
+
+struct EditorSyntax {
+    char *filetype;
+    char **filematch;
+    int flags;
+};
 
 enum EditorKeys {
     BACKSPACE = 8,
@@ -49,6 +57,7 @@ enum EditorKeys {
 
 enum EditorHighlights {
     HL_NORMAL = 0,
+    HL_STRING,
     HL_NUMBER,
     HL_MATCH
 };
@@ -74,11 +83,26 @@ struct EditorConfig {
     char *filename;
     char statusmsg[80];
     time_t statusmsg_time;
+    struct EditorSyntax *syntax;
     struct termios origin;
 };
 
 // using the editorconfig
 struct EditorConfig E;
+
+/*** filetypes ***/
+
+char *C_HL_extensions[] = { ".c", ".h", ".cpp", NULL };
+
+struct EditorSyntax HLDB[] = {
+  {
+    "c",
+    C_HL_extensions,
+    HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRING
+  },
+};
+
+#define HLDB_ENTRIES (sizeof(HLDB) / sizeof(HLDB[0]))
 
 // prototypes
 char *EditorPrompt(char *prompt, void (*callback)(char *, int));
@@ -289,29 +313,84 @@ int is_separator(int c) {
 void EditorUpdateSyntax(erow *row) {
     row->hl = realloc(row->hl, row->rsize);
     memset(row->hl, HL_NORMAL, row->rsize);
+
+    if (E.syntax == NULL) return;
+
     int prev_sep = 1;
+    int in_string = 0;
+
     int i = 0;
     while (i < row->rsize) {
         char c = row->render[i];
         unsigned char prev_hl = (i > 0) ? row->hl[i - 1] : HL_NORMAL;
-
-        if ((isdigit(c) && (prev_sep || prev_hl == HL_NUMBER)) ||
-        (c == '.' && prev_hl == HL_NUMBER)) {
-            row->hl[i] = HL_NUMBER;
-            i++;
-            prev_sep = 0;
-            continue;
+        
+        if (E.syntax->flags & HL_STRING) {
+            if (in_string) {
+                row->hl[i] = HL_STRING;
+                if (c == in_string) in_string = 0;
+                i++;
+                prev_sep = 1;
+                continue;
+            } else { 
+                if (c == '"' || c == '\'') {
+                    in_string = c;
+                    row->hl[i] = HL_STRING;
+                    i++;
+                    continue;
+                }
+            }
         }
-        prev_sep = is_separator(c);
-        i++;
+
+
+        if (E.syntax->flags & HL_HIGHLIGHT_NUMBERS) {
+            if ((isdigit(c) && (prev_sep || prev_hl == HL_NUMBER)) ||
+            (c == '.' && prev_hl == HL_NUMBER)) {
+                row->hl[i] = HL_NUMBER;
+                i++;
+                prev_sep = 0;
+                continue;
+            }
+            prev_sep = is_separator(c);
+            i++;
+        }
   }
 }
 
 int EditorSyntaxToColor(int hl) {
     switch (hl) {
+        case HL_STRING: return 35;
         case HL_NUMBER: return 32;
         case HL_MATCH: return 36;
         default: return 37;
+    }
+}
+
+void EditorSelectSyntaxHighlight() {
+    E.syntax = NULL;
+    if (E.filename == NULL) return;
+
+    char *ext = strrchr(E.filename, '.');
+
+    for (unsigned int j = 0; j < HLDB_ENTRIES; j++) {
+        struct EditorSyntax *s = &HLDB[j];
+        unsigned int i = 0;
+        while (s->filematch[i]) {
+            int is_ext = (s->filematch[i][0] == '.');
+
+            if ((is_ext && ext && !strcmp(ext, s->filematch[i])) ||
+               (!is_ext && strstr(E.filename, s->filematch[i]))) {
+                E.syntax = s;
+
+                int filerow;
+                for (filerow = 0; filerow < E.numrows; filerow++) {
+                    EditorUpdateSyntax(&E.row[filerow]);
+                }
+
+                return;
+            }
+
+            i++;
+        }
     }
 }
 
@@ -523,6 +602,8 @@ void EditorOpen(char* filename) {
     free(E.filename);
     E.filename = strdup(filename);
 
+    EditorSelectSyntaxHighlight();
+
     FILE *fp = fopen(filename, "r");
     if (!fp) errors("fopen");
 
@@ -548,6 +629,7 @@ void EditorSave() {
             EditorSetStatusMessage("Save aborted");
             return;
         }
+        EditorSelectSyntaxHighlight();
     }
 
     int len;
@@ -744,8 +826,8 @@ void EditorDrawStatusLine(struct abuf *ab) {
     int len = snprintf(status, sizeof(status), "%.20s - %d lines %s",
          E.filename ? E.filename : "[No Name]", E.numrows,
          E.dirty ? "(modified)" : "");
-    int rlen = snprintf(rstatus, sizeof(rstatus), "%d/%d",
-            E.Cy + 1, E.numrows);
+    int rlen = snprintf(rstatus, sizeof(rstatus), "%s | %d/%d",
+        E.syntax ? E.syntax->filetype : "no ft", E.Cy + 1, E.numrows);
     if (len > E.S_cols) len = E.S_cols;
     abAppend(ab, status, len);
     while (len < E.S_cols) {
@@ -1053,6 +1135,7 @@ void InitEditor() {
     E.filename = NULL;
     E.statusmsg[0] = '\0';
     E.statusmsg_time = 0;
+    E.syntax = NULL;
 
     if (GetWS(&E.S_rows , &E.S_cols) == -1) errors("GetWS");
     E.S_rows -= 2;
