@@ -357,13 +357,14 @@ void EditorUpdateRows(erow *row) {
             while (idx % TAB_S != 0) row->render[idx++] = ' ';
         } else {
             row->render[idx++] = row->chars[j];
+        }
     }
-  }
-  row->render[idx] = '\0';
-  row->rsize = idx;
+    row->render[idx] = '\0';
+    row->rsize = idx;
 
-  EditorUpdateSyntax(row);
+    EditorUpdateSyntax(row);
 }
+
 
 void EditorAppendRows(int at, char *s, size_t len) {
     if (at < 0 || at > E.numrows) return;
