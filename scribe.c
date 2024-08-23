@@ -358,8 +358,14 @@ void EditorSelectSyntaxHighlight() {
 
             if ((is_ext && ext && !strcmp(ext, s->filematch[i])) ||
                (!is_ext && strstr(E.filename, s->filematch[i]))) {
-            E.syntax = s;
-            return;
+                E.syntax = s;
+
+                int filerow;
+                for (filerow = 0; filerow < E.numrows; filerow++) {
+                    EditorUpdateSyntax(&E.row[filerow]);
+                }
+
+                return;
             }
 
             i++;
