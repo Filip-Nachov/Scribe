@@ -23,6 +23,7 @@
 #define QUIT_UNSAVED 1
 #define CTRL_KEY(k) ((k) & 0x1f)
 #define ABUF_INIT {NULL, 0}
+#define HL_HIGHLIGHT_NUMBERS (1<<0)
 //arrow keys
 // A stands for Arrow
 #define A_UP 1000
@@ -31,6 +32,12 @@
 #define A_RIGHT 1003
 
 /*** data ***/
+
+struct EditorSyntax {
+    char *filetype;
+    char **filematch;
+    int flags;
+};
 
 enum EditorKeys {
     BACKSPACE = 8,
