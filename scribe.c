@@ -81,11 +81,26 @@ struct EditorConfig {
     char *filename;
     char statusmsg[80];
     time_t statusmsg_time;
+    struct EditorSyntax *syntax;
     struct termios origin;
 };
 
 // using the editorconfig
 struct EditorConfig E;
+
+/*** filetypes ***/
+
+char *C_HL_extensions[] = { ".c", ".h", ".cpp", NULL };
+
+struct EditorSyntax HLDB[] = {
+  {
+    "c",
+    C_HL_extensions,
+    HL_HIGHLIGHT_NUMBERS
+  },
+};
+
+#define HLDB_ENTRIES (sizeof(HLDB) / sizeof(HLDB[0]))
 
 // prototypes
 char *EditorPrompt(char *prompt, void (*callback)(char *, int));
