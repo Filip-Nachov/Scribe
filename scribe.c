@@ -766,8 +766,8 @@ void EditorDrawStatusLine(struct abuf *ab) {
     int len = snprintf(status, sizeof(status), "%.20s - %d lines %s",
          E.filename ? E.filename : "[No Name]", E.numrows,
          E.dirty ? "(modified)" : "");
-    int rlen = snprintf(rstatus, sizeof(rstatus), "%d/%d",
-            E.Cy + 1, E.numrows);
+    int rlen = snprintf(rstatus, sizeof(rstatus), "%s | %d/%d",
+        E.syntax ? E.syntax->filetype : "no ft", E.Cy + 1, E.numrows);
     if (len > E.S_cols) len = E.S_cols;
     abAppend(ab, status, len);
     while (len < E.S_cols) {
@@ -1075,6 +1075,7 @@ void InitEditor() {
     E.filename = NULL;
     E.statusmsg[0] = '\0';
     E.statusmsg_time = 0;
+    E.syntax = NULL;
 
     if (GetWS(&E.S_rows , &E.S_cols) == -1) errors("GetWS");
     E.S_rows -= 2;
