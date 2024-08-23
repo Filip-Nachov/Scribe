@@ -311,21 +311,28 @@ int is_separator(int c) {
 void EditorUpdateSyntax(erow *row) {
     row->hl = realloc(row->hl, row->rsize);
     memset(row->hl, HL_NORMAL, row->rsize);
+
+    if (E.syntax == NULL) return;
+
     int prev_sep = 1;
     int i = 0;
+
+
     while (i < row->rsize) {
         char c = row->render[i];
         unsigned char prev_hl = (i > 0) ? row->hl[i - 1] : HL_NORMAL;
-
-        if ((isdigit(c) && (prev_sep || prev_hl == HL_NUMBER)) ||
-        (c == '.' && prev_hl == HL_NUMBER)) {
-            row->hl[i] = HL_NUMBER;
+        
+        if (E.syntax->flags & HL_HIGHLIGHT_NUMBERS) {
+            if ((isdigit(c) && (prev_sep || prev_hl == HL_NUMBER)) ||
+            (c == '.' && prev_hl == HL_NUMBER)) {
+                row->hl[i] = HL_NUMBER;
+                i++;
+                prev_sep = 0;
+                continue;
+            }
+            prev_sep = is_separator(c);
             i++;
-            prev_sep = 0;
-            continue;
         }
-        prev_sep = is_separator(c);
-        i++;
   }
 }
 
@@ -334,6 +341,29 @@ int EditorSyntaxToColor(int hl) {
         case HL_NUMBER: return 32;
         case HL_MATCH: return 36;
         default: return 37;
+    }
+}
+
+void EditorSelectSyntaxHighlight() {
+    E.syntax = NULL;
+    if (E.filename == NULL) return;
+
+    char *ext = strrchr(E.filename, '.');
+
+    for (unsigned int j = 0; j < HLDB_ENTRIES; j++) {
+        struct EditorSyntax *s = &HLDB[j];
+        unsigned int i = 0;
+        while (s->filematch[i]) {
+            int is_ext = (s->filematch[i][0] == '.');
+
+            if ((is_ext && ext && !strcmp(ext, s->filematch[i])) ||
+               (!is_ext && strstr(E.filename, s->filematch[i]))) {
+            E.syntax = s;
+            return;
+            }
+
+            i++;
+        }
     }
 }
 
@@ -545,6 +575,8 @@ void EditorOpen(char* filename) {
     free(E.filename);
     E.filename = strdup(filename);
 
+    EditorSelectSyntaxHighlight();
+
     FILE *fp = fopen(filename, "r");
     if (!fp) errors("fopen");
 
@@ -570,6 +602,7 @@ void EditorSave() {
             EditorSetStatusMessage("Save aborted");
             return;
         }
+        EditorSelectSyntaxHighlight();
     }
 
     int len;
