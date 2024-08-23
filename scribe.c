@@ -283,6 +283,10 @@ void abFree(struct abuf *ab) {
 
 /*** syntax highlighting ***/
 
+int is_separator(int c) {
+    return isspace(c) || c == '\0'  || strchr(",.()+-/*=~%<>[];", c) != NULL;
+}
+
 void EditorUpdateSyntax(erow *row) {
     row->hl = realloc(row->hl, row->rsize);
     if (row->hl == NULL) return;
