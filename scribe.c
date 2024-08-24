@@ -94,11 +94,17 @@ struct EditorConfig E;
 /*** filetypes ***/
 
 char *C_HL_extensions[] = { ".c", ".h", ".cpp", NULL };
+char *PY_HL_extensions[] = { ".py", ".pyi", ".pyc", ".pyd", ".pyo", ".pyw", ".pyz", NULL };
 
 struct EditorSyntax HLDB[] = {
   {
     "c",
     C_HL_extensions,
+    HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRING
+  },
+  {
+    "py",
+    PY_HL_extensions,
     HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRING
   },
 };
