@@ -327,6 +327,9 @@ void EditorUpdateSyntax(erow *row) {
 
     if (E.syntax == NULL) return;
 
+    char *scs = E.syntax->singleline_comment_start;
+    int scs_len = scs ? strlen(scs) : 0;
+
     int prev_sep = 1;
     int in_string = 0;
 
@@ -334,7 +337,14 @@ void EditorUpdateSyntax(erow *row) {
     while (i < row->rsize) {
         char c = row->render[i];
         unsigned char prev_hl = (i > 0) ? row->hl[i - 1] : HL_NORMAL;
-        
+       
+        if (scs_len && !in_string) {
+            if (!strncmp(&row->render[i], scs, scs_len)) {
+                memset(&row->hl[i], HL_COMMENT, row->rsize - i);
+                break;
+            }
+        }
+
         if (E.syntax->flags & HL_HIGHLIGHT_STRING) {
             if (in_string) {
                 row->hl[i] = HL_STRING;
@@ -374,7 +384,7 @@ void EditorUpdateSyntax(erow *row) {
 
 int EditorSyntaxToColor(int hl) {
     switch (hl) {
-        case HL_COMMENT: return 31;
+        case HL_COMMENT: return 36;
         case HL_STRING: return 33;
         case HL_NUMBER: return 32;
         case HL_MATCH: return 34;
