@@ -57,6 +57,7 @@ enum EditorKeys {
 
 enum EditorHighlights {
     HL_NORMAL = 0,
+    HL_COMMENT,
     HL_STRING,
     HL_NUMBER,
     HL_MATCH
@@ -364,9 +365,10 @@ void EditorUpdateSyntax(erow *row) {
 
 int EditorSyntaxToColor(int hl) {
     switch (hl) {
+        case HL_COMMENT: return 31;
         case HL_STRING: return 33;
         case HL_NUMBER: return 32;
-        case HL_MATCH: return 36;
+        case HL_MATCH: return 34;
         default: return 37;
     }
 }
