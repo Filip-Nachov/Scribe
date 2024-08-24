@@ -37,6 +37,7 @@
 struct EditorSyntax {
     char *filetype;
     char **filematch;
+    char *singleline_comment_start;
     int flags;
 };
 
@@ -57,6 +58,7 @@ enum EditorKeys {
 
 enum EditorHighlights {
     HL_NORMAL = 0,
+    HL_COMMENT,
     HL_STRING,
     HL_NUMBER,
     HL_MATCH
@@ -93,11 +95,19 @@ struct EditorConfig E;
 /*** filetypes ***/
 
 char *C_HL_extensions[] = { ".c", ".h", ".cpp", NULL };
+char *PY_HL_extensions[] = { ".py", ".pyi", ".pyc", ".pyd", ".pyo", ".pyw", ".pyz", NULL };
 
 struct EditorSyntax HLDB[] = {
   {
     "c",
     C_HL_extensions,
+    "//",
+    HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRING
+  },
+  {
+    "py",
+    PY_HL_extensions,
+    "#",
     HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRING
   },
 };
@@ -106,6 +116,7 @@ struct EditorSyntax HLDB[] = {
 
 // prototypes
 char *EditorPrompt(char *prompt, void (*callback)(char *, int));
+
 
 /*** funcs ***/
 
@@ -316,6 +327,9 @@ void EditorUpdateSyntax(erow *row) {
 
     if (E.syntax == NULL) return;
 
+    char *scs = E.syntax->singleline_comment_start;
+    int scs_len = scs ? strlen(scs) : 0;
+
     int prev_sep = 1;
     int in_string = 0;
 
@@ -323,10 +337,22 @@ void EditorUpdateSyntax(erow *row) {
     while (i < row->rsize) {
         char c = row->render[i];
         unsigned char prev_hl = (i > 0) ? row->hl[i - 1] : HL_NORMAL;
-        
-        if (E.syntax->flags & HL_STRING) {
+       
+        if (scs_len && !in_string) {
+            if (!strncmp(&row->render[i], scs, scs_len)) {
+                memset(&row->hl[i], HL_COMMENT, row->rsize - i);
+                break;
+            }
+        }
+
+        if (E.syntax->flags & HL_HIGHLIGHT_STRING) {
             if (in_string) {
                 row->hl[i] = HL_STRING;
+                if (c == '\\' && i + 1 < row->rsize) {
+                    row->hl[i + 1] = HL_STRING;
+                    i += 2;
+                    continue;
+                }
                 if (c == in_string) in_string = 0;
                 i++;
                 prev_sep = 1;
@@ -358,9 +384,10 @@ void EditorUpdateSyntax(erow *row) {
 
 int EditorSyntaxToColor(int hl) {
     switch (hl) {
-        case HL_STRING: return 35;
+        case HL_COMMENT: return 36;
+        case HL_STRING: return 33;
         case HL_NUMBER: return 32;
-        case HL_MATCH: return 36;
+        case HL_MATCH: return 34;
         default: return 37;
     }
 }
@@ -555,6 +582,7 @@ void EditorDelChar() {
         EditorRowDelChar(&E.row[E.Cy], E.Cx - 1);
         E.Cx--;
     }
+
     E.dirty++;
 }
 
@@ -572,7 +600,6 @@ void EditorSetStatusMessage(const char *fmt, ...) {
     E.statusmsg_time = time(NULL);
 }
 
-void EditorRefreshScreen();
 
 
 /*** file i/o ***/
