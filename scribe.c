@@ -107,6 +107,7 @@ struct EditorSyntax HLDB[] = {
 // prototypes
 char *EditorPrompt(char *prompt, void (*callback)(char *, int));
 
+
 /*** funcs ***/
 
 
@@ -324,9 +325,14 @@ void EditorUpdateSyntax(erow *row) {
         char c = row->render[i];
         unsigned char prev_hl = (i > 0) ? row->hl[i - 1] : HL_NORMAL;
         
-        if (E.syntax->flags & HL_STRING) {
+        if (E.syntax->flags & HL_HIGHLIGHT_STRING) {
             if (in_string) {
                 row->hl[i] = HL_STRING;
+                if (c == '\\' && i + 1 < row->rsize) {
+                    row->hl[i + 1] = HL_STRING;
+                    i += 2;
+                    continue;
+                }
                 if (c == in_string) in_string = 0;
                 i++;
                 prev_sep = 1;
@@ -358,7 +364,7 @@ void EditorUpdateSyntax(erow *row) {
 
 int EditorSyntaxToColor(int hl) {
     switch (hl) {
-        case HL_STRING: return 35;
+        case HL_STRING: return 33;
         case HL_NUMBER: return 32;
         case HL_MATCH: return 36;
         default: return 37;
@@ -555,6 +561,7 @@ void EditorDelChar() {
         EditorRowDelChar(&E.row[E.Cy], E.Cx - 1);
         E.Cx--;
     }
+
     E.dirty++;
 }
 
@@ -572,7 +579,6 @@ void EditorSetStatusMessage(const char *fmt, ...) {
     E.statusmsg_time = time(NULL);
 }
 
-void EditorRefreshScreen();
 
 
 /*** file i/o ***/
