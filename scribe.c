@@ -37,6 +37,7 @@
 struct EditorSyntax {
     char *filetype;
     char **filematch;
+    char **keywords;
     char *singleline_comment_start;
     int flags;
 };
@@ -59,6 +60,8 @@ enum EditorKeys {
 enum EditorHighlights {
     HL_NORMAL = 0,
     HL_COMMENT,
+    HL_KEYWORD1,
+    HL_KEYWORD2,
     HL_STRING,
     HL_NUMBER,
     HL_MATCH
@@ -94,19 +97,68 @@ struct EditorConfig E;
 
 /*** filetypes ***/
 
-char *C_HL_extensions[] = { ".c", ".h", ".cpp", NULL };
+// C
+char *C_HL_extensions[] = { ".c", ".h", NULL };
+char *C_HL_keywords[] = {
+  "switch", "if", "while", "for", "break", "continue", "return", "else",
+  "struct", "union", "typedef", "static", "enum", "class", "case",   "#define", "#include", "NULL"
+
+  "int|", "long|", "double|", "float|", "char|", "unsigned|", "signed|",
+  "void|", NULL
+};
+
+// C++
+char *CPP_HL_extensions[] = {".cpp", ".hpp", NULL};
+char *CPP_HL_keywords[] = {
+  "alignas", "alignof", "and", "and_eq", "asm", "atomic_cancel", "atomic_commit", "atomic_noexcept", 
+  "auto", "bitand", "bitor", "bool|", "break", "case", "catch", "char", "char8_t", "char16_t", "char32_t", 
+  "class", "compl", "concept", "const", "consteval", "constexpr", "constinit", "const_cast", "continue", 
+  "decltype", "default", "delete", "do", "double", "dynamic_cast", "else", "enum", "explicit", "export", 
+  "extern", "false", "float", "for|", "friend", "goto", "if|", "import", "inline", "int|", "long", "mutable", 
+  "namespace", "new", "noexcept", "not", "not_eq", "nullptr", "operator", "or", "or_eq", "private", 
+  "protected", "public", "register", "reinterpret_cast", "requires", "return|", "short", "signed", 
+  "sizeof", "static", "static_assert", "static_cast", "struct", "switch", "template", "this", "thread_local", 
+  "throw", "true", "try", "typedef", "typeid", "typename", "union", "unsigned", "using", "virtual", "void", 
+  "volatile", "wchar_t", "while", "xor", "xor_eq", NULL
+};
+
+
+// Python
 char *PY_HL_extensions[] = { ".py", ".pyi", ".pyc", ".pyd", ".pyo", ".pyw", ".pyz", NULL };
+char *PY_HL_keywords[] = {
+  "False", "None|", "True|", "and", "as", "assert", "break", "class", "continue", "def|",
+  "del", "elif", "else", "except", "finally", "for", "from", "global", "if", "import|",
+  "in", "is", "lambda", "match", "meanwhile", "not", "or", "pass", "raise", "return|",
+  "try", "while", "with", "yield", "abs", "all", "any", "ascii", "bin", "bool", "bytearray",
+  "bytes", "callable", "chr", "classmethod", "compile", "complex", "copyright", "credits",
+  "delattr", "dict", "dir", "divmod", "enumerate", "eval", "exit", "getattr", "globals",
+  "hasattr", "hash", "help", "id", "input", "int", "isinstance", "issubclass", "iter",
+  "len", "license", "list", "locals", "map", "max", "memoryview", "min", "next", "object",
+  "oct", "open", "ord", "pow", "print", "property", "quit", "range", "repr", "reversed",
+  "round", "set", "setattr", "slice", "sorted", "staticmethod", "str", "sum", "super",
+  "tuple", "type", "vars", "zip", NULL
+};
+
 
 struct EditorSyntax HLDB[] = {
   {
     "c",
     C_HL_extensions,
+    C_HL_keywords,
     "//",
     HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRING
   },
   {
+      "cpp",
+      CPP_HL_extensions,
+      CPP_HL_keywords,
+      "//",
+      HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRING
+  },
+  {
     "py",
     PY_HL_extensions,
+    PY_HL_keywords,
     "#",
     HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRING
   },
@@ -327,6 +379,8 @@ void EditorUpdateSyntax(erow *row) {
 
     if (E.syntax == NULL) return;
 
+    char **keywords = E.syntax->keywords;
+
     char *scs = E.syntax->singleline_comment_start;
     int scs_len = scs ? strlen(scs) : 0;
 
@@ -379,12 +433,36 @@ void EditorUpdateSyntax(erow *row) {
             prev_sep = is_separator(c);
             i++;
         }
+
+      if (prev_sep) {
+            int j;
+            for (j = 0; keywords[j]; j++) {
+                int klen = strlen(keywords[j]);
+                int kw2 = keywords[j][klen - 1] == '|';
+
+                if (kw2) klen--;
+                if (!strncmp(&row->render[i], keywords[j], klen) &&
+                   is_separator(row->render[i + klen])) {
+                    memset(&row->hl[i], kw2 ? HL_KEYWORD2 : HL_KEYWORD1, klen);
+                    i += klen;
+                    break;
+            }
+      }
+
+            if (keywords[j] != NULL) {
+            prev_sep = 0;
+            continue;
+            }
+
+    }
   }
 }
 
 int EditorSyntaxToColor(int hl) {
     switch (hl) {
         case HL_COMMENT: return 36;
+        case HL_KEYWORD1: return 35;
+        case HL_KEYWORD2: return 31;                  
         case HL_STRING: return 33;
         case HL_NUMBER: return 32;
         case HL_MATCH: return 34;
