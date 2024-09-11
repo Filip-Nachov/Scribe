@@ -36,9 +36,10 @@ A simple terminal text editor
 In order to install scribe with Linux/Macos you can just clone the repo and use the make file in it   
 
 ```bash
-  git clone https://github.com/Filip-Nachov/Scribe.git
-  cd Scribe
-  sudo make install
+git clone https://github.com/Filip-Nachov/Scribe.git
+cd Scribe
+make
+sudo make install
 ```
 and to test and make sure everything is done correctly, run the command 
 
