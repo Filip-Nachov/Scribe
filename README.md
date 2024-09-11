@@ -27,9 +27,9 @@ A simple terminal text editor
 ## Installation
 
 ### Prerequirments
-git
-make 
-gcc
+<b> [git](https://git-scm.com/downloads) <b> <br>
+<b> [make](https://www.incredibuild.com/integrations/gnu-make) <b> <br>
+<b> [gcc](https://www.incredibuild.com/integrations/gcc) <b>
 
 ### Linux/Macos
 
@@ -40,14 +40,14 @@ In order to install scribe with Linux/Macos you can just clone the repo and use 
   cd Scribe
   sudo make install
 ```
-and to test and make sure everything is done correctyl run 
+and to test and make sure everything is done correctly, run the command 
 
 ```
 scribe
 ```
 
 ### Windows
-The best way to do this now is with a wsl and use the Linux/Macos guide
+The best way to do this now is with a [wsl](https://learn.microsoft.com/en-us/windows/wsl/install) and use the Linux/Macos guide
 
 
     
