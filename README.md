@@ -37,7 +37,7 @@ In order to install scribe with Linux/Macos you can just clone the repo and use 
 
 ```bash
   git clone https://github.com/Filip-Nachov/Scribe.git
-  cd scribe
+  cd Scribe
   sudo make install
 ```
 and to test and make sure everything is done correctyl run 
@@ -58,7 +58,7 @@ Here will be shown the basic file operations, movement, writing (insert mode)
 ### file operations
 To open Scribe use:
 ```bash
-Scribe
+scribe
 ```
 To open a file using Scribe:
 ```bash
