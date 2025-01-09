@@ -1130,6 +1130,11 @@ void EditorRefreshScreen()
     abFree(&ab);
 }
 
+void EditorRefreshChar()
+{
+    EditorRefreshScreen();
+}
+
 void EditorDelChar()
 {
     if (E.Cy == E.numrows || (E.Cy == 0 && E.Cx == 0))
@@ -1140,6 +1145,7 @@ void EditorDelChar()
     {
         EditorRowDelChar(row, E.Cx - 1);
         E.Cx--;
+        EditorUpdateRows(row);
     }
     else if (E.Cx == 0 && E.Cy > 0)
     {
@@ -1150,7 +1156,7 @@ void EditorDelChar()
     }
 
     E.dirty++;
-    EditorRefreshScreen();
+    EditorRefreshChar();
 }
 
 /*** input ***/
@@ -1332,11 +1338,8 @@ void InsertMode(int c)
         break;
 
     case BACKSPACE:
-        if (E.Cx != 0 || E.Cy != 0)
-        {
-            EditorDelChar();
-            EditorRefreshScreen();
-        }
+        EditorDelChar();
+        EditorRefreshScreen();
         break;
 
     case ESC:
@@ -1345,8 +1348,10 @@ void InsertMode(int c)
     case DEL:
         EditorMoveCursor(RIGHT);
         EditorDelChar();
+        EditorRefreshScreen();
         break;
     }
+    EditorRefreshScreen();
 }
 
 void EditorProcessKeypress()
@@ -1358,7 +1363,6 @@ void EditorProcessKeypress()
 
     switch (c)
     {
-
     case CTRL_KEY('q'):
         if (E.dirty && quit_times > 0)
         {
@@ -1419,7 +1423,7 @@ void EditorProcessKeypress()
         EditorFind();
         break;
 
-    //  basic movement
+    // basic movement
     case UP:
     case DOWN:
     case RIGHT:
@@ -1430,19 +1434,11 @@ void EditorProcessKeypress()
     case CTRL_KEY('l'):
         break;
 
-    // ! processing backspace key
+    // processing backspace key
     case BACKSPACE:
-        if (E.Cx != 0 || E.Cy != 0)
-        {
-            EditorDelChar();
-            EditorRefreshScreen();
-        }
-        break;
-
     case DEL:
-        if (c == DEL)
-            EditorMoveCursor(RIGHT);
         EditorDelChar();
+        EditorRefreshScreen();
         break;
 
     case INSERT:
@@ -1454,6 +1450,7 @@ void EditorProcessKeypress()
         }
         EditorSetStatusMessage("-- Normal Mode --");
     }
+    EditorRefreshScreen();
 }
 
 /*** init ***/
